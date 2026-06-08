@@ -29,19 +29,19 @@ echo -e "x\ty" > .tmp_graph_sv.csv;
 for i in ${array_type[@]}; do 
     NB=`grep -w $i ../../OUTSIDER/VARIANT_CALLING/SV.vcf | cut -f 2 | sort | uniq | wc -l || echo 0`;
     echo -e "$i\t$NB";
-    sed -i "s/%%VALUE_${i}%%/${NB}/g" lib/template_HISTO_TYPE_SV.html
+    perl -pi -e "s/%%VALUE_${i}%%/${NB}/g" lib/template_HISTO_TYPE_SV.html
 done >> .tmp_graph_sv.csv;
 
 NB_INS_TrEMOLO=`cat ../../OUTSIDER/TrEMOLO_SV_TE/INS/SV_INS_CLUST.bed | wc -l || echo 0`
-sed -i "s/%%VALUE_INS_TrEMOLO%%/${NB_INS_TrEMOLO}/g" lib/template_HISTO_TYPE_SV.html
+perl -pi -e "s/%%VALUE_INS_TrEMOLO%%/${NB_INS_TrEMOLO}/g" lib/template_HISTO_TYPE_SV.html
 
 
 NB_SOFT=`cat ../../OUTSIDER/TrEMOLO_SV_TE/SOFT/SV_SOFT.vcf | wc -l || echo 0`
-sed -i "s/%%VALUE_SOFT%%/${NB_SOFT}/g" lib/template_HISTO_TYPE_SV.html
+perl -pi -e "s/%%VALUE_SOFT%%/${NB_SOFT}/g" lib/template_HISTO_TYPE_SV.html
 
 
 NB_HARD=`(test -s ../../OUTSIDER/TrEMOLO_SV_TE/HARD/HARD.fasta && grep ">" ../../OUTSIDER/TrEMOLO_SV_TE/HARD/HARD.fasta  | cut -d ":" -f 5 | sort -u | wc -l) || echo 0`
-sed -i "s/%%VALUE_HARD%%/${NB_HARD}/g" lib/template_HISTO_TYPE_SV.html
+perl -pi -e "s/%%VALUE_HARD%%/${NB_HARD}/g" lib/template_HISTO_TYPE_SV.html
 
 ```
 
@@ -49,64 +49,66 @@ sed -i "s/%%VALUE_HARD%%/${NB_HARD}/g" lib/template_HISTO_TYPE_SV.html
 
 ## NUMBER OF TE
 
-Total number of **TE : `r data=read.csv("../../OUTSIDER/TE_DETECTION/MERGE_TE/MERGE_TE_ALL.bed", sep="\t", header=FALSE); nrow(data);`**
+Total number of **TE : `r if (file.exists("../../OUTSIDER/TE_DETECTION/MERGE_TE/MERGE_TE_ALL.bed") && file.size("../../OUTSIDER/TE_DETECTION/MERGE_TE/MERGE_TE_ALL.bed") > 0) { data=read.csv("../../OUTSIDER/TE_DETECTION/MERGE_TE/MERGE_TE_ALL.bed", sep="\t", header=FALSE); nrow(data); } else { 0 }`**
 
-Number of family found : **`r data=read.csv("../../OUTSIDER/TE_DETECTION/MERGE_TE/MERGE_TE_ALL_COUNT.csv", sep="\t"); nrow(data);`**
+Number of family found : **`r if (file.exists("../../OUTSIDER/TE_DETECTION/MERGE_TE/MERGE_TE_ALL_COUNT.csv") && file.size("../../OUTSIDER/TE_DETECTION/MERGE_TE/MERGE_TE_ALL_COUNT.csv") > 5) { data=read.csv("../../OUTSIDER/TE_DETECTION/MERGE_TE/MERGE_TE_ALL_COUNT.csv", sep="\t"); nrow(data); } else { 0 }`**
 
 ```{r NB_OUTSIDER, eval=TRUE, include=TRUE, results=TRUE, out.width="90%"}
 
-    data = read.csv("../../OUTSIDER/TE_DETECTION/MERGE_TE/MERGE_TE_ALL_COUNT.csv", sep="\t")
-    #kbl(data)
-    data = tail(data, 50)
+    if (file.exists("../../OUTSIDER/TE_DETECTION/MERGE_TE/MERGE_TE_ALL_COUNT.csv") && file.size("../../OUTSIDER/TE_DETECTION/MERGE_TE/MERGE_TE_ALL_COUNT.csv") > 5) {
+        data = read.csv("../../OUTSIDER/TE_DETECTION/MERGE_TE/MERGE_TE_ALL_COUNT.csv", sep="\t")
+        data = tail(data, 50)
 
-    uniqy = unique(data$y)
-    uniqx = unique(data$x)
+        uniqy = unique(data$y)
+        uniqx = unique(data$x)
 
-    for (y in uniqy){
-        datay = data[data$y %in% y, ]
-        for(x in uniqx){
-            datax = datay[datay$x %in% x, ]
-            if(nrow(datax) != 1){
-                new_line_data <- data.frame(x, y, 0)
-                names(new_line_data) <- c("x", "y", "z")
+        for (y in uniqy){
+            datay = data[data$y %in% y, ]
+            for(x in uniqx){
+                datax = datay[datay$x %in% x, ]
+                if(nrow(datax) != 1){
+                    new_line_data <- data.frame(x, y, 0)
+                    names(new_line_data) <- c("x", "y", "z")
 
-                data <- rbind(data, new_line_data)
+                    data <- rbind(data, new_line_data)
+                }
             }
         }
-    }
 
-
-    max=0
-    namx=""
-    for(x in uniqx){
-        datax = data[data$x %in% x, ]
-        if(max(datax$z)>max){
-            max  = max(datax$z)
-            namx = x
+        max=0
+        namx=""
+        for(x in uniqx){
+            datax = data[data$x %in% x, ]
+            if(max(datax$z)>max){
+                max  = max(datax$z)
+                namx = x
+            }
         }
+
+        datax = data[data$x %in% namx, ]
+        datax = datax[order(datax$z), ]
+
+        data$y <- factor(data$y, levels = datax$y)
+
+        nb_diff_TE = length( unique(data$y) )
+
+        xlabel = ''
+        graph <- ggplot(data, aes(x, y, fill=z, width=0.95, height=0.95)) + 
+            geom_tile() + 
+            ggtitle("") +
+            theme(axis.text.x = element_blank(), axis.text.y = element_text(face="plain", color="#222222", size=5, angle=0)) +
+            coord_fixed() +
+            scale_fill_gradientn(colours=brewer.pal(n= 9, name="Reds")) +
+            theme(panel.background = element_rect(fill = "white", colour = "grey", linewidth=0)) +
+            geom_segment( aes(x = 5, y = 1, xend = 5, yend = nb_diff_TE ), colour = "black", alpha=0, linewidth=0.9 , inherit.aes = FALSE , linetype="twodash") +
+            labs(y="TE", x=xlabel, fill="NUMBER OF TE") +
+            geom_text(aes(label = z), nudge_x=1.2, color = "#222222", size = 2)
+
+        graph
+    } else {
+        plot.new()
+        text(0.5, 0.5, "No OUTSIDER TE detected")
     }
-
-    datax = data[data$x %in% namx, ]
-    datax = datax[order(datax$z), ]
-
-    data$y <- factor(data$y, levels = datax$y)
-
-    nb_diff_TE = length( unique(data$y) )
-
-    xlabel = ''
-    graph <- ggplot(data, aes(x, y, fill=z, width=0.95, height=0.95)) + 
-        geom_tile() + 
-        ggtitle("") +
-        theme(axis.text.x = element_blank(), axis.text.y = element_text(face="plain", color="#222222", size=5, angle=0)) +
-        coord_fixed() +
-        scale_fill_gradientn(colours=brewer.pal(n= 9, name="Reds")) +
-        #scale_fill_viridis(option="heat") +
-        theme(panel.background = element_rect(fill = "white", colour = "grey", linewidth=0)) +
-        geom_segment( aes(x = 5, y = 1, xend = 5, yend = nb_diff_TE ), colour = "black", alpha=0, linewidth=0.9 , inherit.aes = FALSE , linetype="twodash") +
-        labs(y="TE", x=xlabel, fill="NUMBER OF TE") +
-        geom_text(aes(label = z), nudge_x=1.2, color = "#222222", size = 2) 
-
-    graph
 
 ```
 

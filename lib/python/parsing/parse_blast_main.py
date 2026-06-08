@@ -147,7 +147,21 @@ else :
     print(f"[{str(sys.argv[0])}] : ERROR fasta file Database TE Not Found")
     exit(1)
 
-#GET BLAST OUTFMT 
+#GET BLAST OUTFMT
+
+if os.path.getsize(name_file) == 0:
+    print(f"[{str(sys.argv[0])}] : BLAST file is empty (no TE hits) - writing empty output files")
+    pd.DataFrame(columns=["sseqid", "qseqid", "pident", "size_per", "size_el",
+                           "mismatch", "gapopen", "qstart", "qend",
+                           "sstart", "send", "evalue", "bitscore"]).to_csv(
+        path_or_buf=output, sep="\t", index=None)
+    if combine:
+        pd.DataFrame(columns=["sseqid", "qseqid", "grain_pident", "size_per", "size_el",
+                               "qstart", "qend", "sstart", "send"]).to_csv(
+            path_or_buf=combine_name, sep="\t", index=None)
+    pd.DataFrame(columns=["x", "y", "z"]).to_csv(
+        path_or_buf=dir_out + name_out + "_COUNT.csv", sep="\t", index=None)
+    exit(0)
 
 df = pd.read_csv(filepath_or_buffer=name_file, sep="\t", header=None)
 

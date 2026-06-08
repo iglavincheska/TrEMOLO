@@ -128,6 +128,51 @@ Once the requirements fullfilled, just *git* clone
 git clone https://github.com/DrosophilaGenomeEvolution/TrEMOLO.git
 ```
 
+### Using Conda or Mamba (recommended for local installation)
+
+If you do not use Singularity, you can create a reproducible local environment with all required tools:
+
+```bash
+cd TrEMOLO
+
+# with mamba (faster)
+mamba env create -f environment.yml
+
+# or with conda
+conda env create -f environment.yml
+
+conda activate tremolo
+```
+
+Notes for macOS arm64 and recent conda channels:
+
+- `pandoc-citeproc` is deprecated; `pandoc` already provides citeproc support.
+- `r-extrafont` may be unavailable on recent arm64 channels; report generation still works without it.
+- `RaGOO` is installed from GitHub via the `pip` section in `environment.yml`.
+
+Quick check of critical binaries:
+
+```bash
+snakemake --version
+python --version
+blastn -version
+bedtools --version
+minimap2 --version
+samtools --version
+sniffles --version
+svim --version
+liftoff -h | head -n 1
+Rscript --version
+perl --version | head -n 2
+node --version
+```
+
+Then run TrEMOLO as usual:
+
+```bash
+snakemake --snakefile /path/to/TrEMOLO/run.snk --configfile /path/to/your_config.yaml
+```
+
 ## Using Singularity<a name="singularity"></a>
 
 

@@ -206,7 +206,7 @@ if line :
                 chrom   = spl[0]
                 ID      = spl[2]
                 start   = spl[1]
-                type_v  = spl[4]
+                type_v  = re.search("SVTYPE=([A-Z]+)", spl[7]).group(1) if re.search("SVTYPE=([A-Z]+)", spl[7]) != None else spl[4].replace("<", "").replace(">", "")
                 
                 if re.search("END=([0-9]+)", spl[7]) != None and re.search("SUPPORT=([0-9]+)", spl[7]) != None :
                     end     = re.search("END=([0-9]+)", spl[7]).group(1)
@@ -233,6 +233,23 @@ if line :
                                 #2R:<INS>:1:190:svim.INS.2:1:PRECISE
                                 file_fasta.write(">" + ":".join([chrom, type_v, start, end, ID_VR, read_support, precise, str(i)]) + "\n" + seq + "\n")
                                 count += 1
+
+                    # Sniffles2 precise insertions may store the inserted sequence directly in ALT.
+                    elif type_v == "INS" and not re.match(r"^<[^>]+>$", spl[4]) :
+                        seq = spl[4]
+
+                        if ID_RS :
+                            ID_VR = ID + ".0"
+                        else:
+                            ID_VR = ID
+
+                        seq_NN = re.search("^[N]+$", seq)
+                        seq = seq.replace("N", "A")
+
+                        condition = seq != None and (not seq_NN or keep_seq_N) and min_len_seq < len(seq) and "<" + type_v + ">" not in type_list and ((max_len_seq != -1 and len(seq) <= max_len_seq) or (max_len_seq == -1))
+                        if regex_in_list(chrom, chrom_list) and condition :
+                            file_fasta.write(">" + ":".join([chrom, "<" + type_v + ">", start, end, ID_VR, read_support, precise, "0"]) + "\n" + seq + "\n")
+                            count += 1
 
             line = file.readline()
 

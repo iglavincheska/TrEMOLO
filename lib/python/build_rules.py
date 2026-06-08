@@ -26,6 +26,7 @@ name_instruction = args.name_instruction
 name_file_rules  = args.name_file_rules
 name_template    = args.name_template
 name_out         = args.name_out
+repo_root        = os.path.dirname(os.path.realpath(name_file_rules))
 work             = ""
 if args.name_ID == None:
     ID = randrange(200)
@@ -59,6 +60,8 @@ import re
 import os
 
 final_content = ""
+
+final_content += f'import os\nos.environ["TREMOLO_PATH_SNKV"] = r"{repo_root}/run.snk"\n\n'
 
 for i, instruct in enumerate(instructions[::-1]):
     name_rule = instruct.split(":")[0]
@@ -125,6 +128,7 @@ for i, instruct in enumerate(instructions[::-1]):
                     line = re.sub(r'input_link=\[\],', f'cout=["{work}tmp_TrEMOLO_output_rule/rule_tmp_{list_name_rule[::-1][i+1]}_{ID}"],', line)
 
             # Add the processed line
+            line = re.sub(r'(?<!\{)\{\}(?!\})', '{{}}', line)
             updated_content.append(line)
 
         # Update the `step` field in the lines

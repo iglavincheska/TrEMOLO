@@ -55,6 +55,9 @@ def message_color(color, text):
 # Get path snakefile
 path_snk = ""
 
+if "TREMOLO_PATH_SNKV" in os.environ and os.environ["TREMOLO_PATH_SNKV"].strip() != "" :
+    path_snk = os.environ["TREMOLO_PATH_SNKV"].strip()
+
 i = 0
 while i < len(sys.argv) and path_snk == "" :
     if sys.argv[i] == "--snakefile" :
@@ -139,6 +142,6 @@ onsuccess:
 
 onerror:
     print("AN ERROR OCCURRED!")
-    shell("kill -s 15 `ps -f | grep \"TrEMOLO/lib/nodejs/load.js\" 2>/dev/null | awk '$8==\"node\" {{print $2}}'` 2>/dev/null")
+    shell("(kill -s 15 `ps -f | grep \"TrEMOLO/lib/nodejs/load.js\" 2>/dev/null | awk '$8==\"node\" {{print $2}}'` 2>/dev/null) || true")
 
 

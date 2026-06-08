@@ -13,66 +13,68 @@
 
 ```
 
-Total number of **TE : `r data=read.csv("../../TE_INFOS.bed", sep="\t"); nrow(data)-1;`**
+Total number of **TE : `r if (file.exists("../../TE_INFOS.bed") && file.size("../../TE_INFOS.bed") > 0) { data=read.csv("../../TE_INFOS.bed", sep="\t"); max(nrow(data)-1, 0); } else { 0 }`**
 
-Number of family found : **`r data=read.csv(".tmp_ALL_TE_COUNT.csv", sep="\t"); nrow(data);`**
+Number of family found : **`r if (file.exists(".tmp_ALL_TE_COUNT.csv") && file.size(".tmp_ALL_TE_COUNT.csv") > 5) { data=read.csv(".tmp_ALL_TE_COUNT.csv", sep="\t"); nrow(data); } else { 0 }`**
 
 ```{r NB_INOUTSIDER, eval=TRUE, include=TRUE, results=TRUE, out.width="90%"}
 
-data = read.csv(".tmp_ALL_TE_COUNT.csv", sep="\t")
-#kbl(data)
-data = tail(data, 50)
+if (file.exists(".tmp_ALL_TE_COUNT.csv") && file.size(".tmp_ALL_TE_COUNT.csv") > 5) {
+    data = read.csv(".tmp_ALL_TE_COUNT.csv", sep="\t")
+    data = tail(data, 50)
 
-uniqy = unique(data$y)
-uniqx = unique(data$x)
+    uniqy = unique(data$y)
+    uniqx = unique(data$x)
 
-for (y in uniqy){
-	datay = data[data$y %in% y, ]
-	for(x in uniqx){
-		datax = datay[datay$x %in% x, ]
-		if(nrow(datax) != 1){
-			new_line_data <- data.frame(x, y, 0)
-			names(new_line_data) <- c("x", "y", "z")
+    for (y in uniqy){
+		datay = data[data$y %in% y, ]
+		for(x in uniqx){
+			datax = datay[datay$x %in% x, ]
+			if(nrow(datax) != 1){
+				new_line_data <- data.frame(x, y, 0)
+				names(new_line_data) <- c("x", "y", "z")
 
-			data <- rbind(data, new_line_data)
+				data <- rbind(data, new_line_data)
+			}
 		}
-	}
+    }
+
+    max=0
+    namx=""
+    for(x in uniqx){
+		datax = data[data$x %in% x, ]
+		if(max(datax$z)>max){
+			max  = max(datax$z)
+			namx = x
+		}
+    }
+
+    datax = data[data$x %in% namx, ]
+    datax = datax[order(datax$z), ]
+
+    data$y <- factor(data$y, levels = datax$y)
+
+    nb_diff_TE = length( unique(data$y) )
+
+    xlabel = ''
+    graph <- ggplot(data, aes(x, y, fill=z, width=0.95, height=0.95)) + 
+        geom_tile() + 
+        ggtitle("") +
+        coord_fixed() +
+        scale_fill_gradientn(colours=brewer.pal(n= 9, name="Reds")) +
+        theme(
+			panel.background = element_rect(fill = "white", colour = "grey", linewidth=0),
+			axis.text.x = element_blank(), axis.text.y = element_text(face="plain", color="#222222", size=6, angle=0)
+		) +
+        geom_segment( aes(x = 5, y = 1, xend = 5, yend = nb_diff_TE ), colour = "black", alpha=0, linewidth=0.9 , inherit.aes = FALSE , linetype="twodash") +
+        labs(y="TE", x=xlabel, fill="NUMBER OF TE") +
+		geom_text(aes(label = z), nudge_x=1.2, color = "#222222", size = 2)
+
+    graph
+} else {
+    plot.new()
+    text(0.5, 0.5, "No combined TE detected")
 }
-
-
-max=0
-namx=""
-for(x in uniqx){
-	datax = data[data$x %in% x, ]
-	if(max(datax$z)>max){
-		max  = max(datax$z)
-		namx = x
-	}
-}
-
-datax = data[data$x %in% namx, ]
-datax = datax[order(datax$z), ]
-
-data$y <- factor(data$y, levels = datax$y)
-
-nb_diff_TE = length( unique(data$y) )
-
-xlabel = ''
-graph <- ggplot(data, aes(x, y, fill=z, width=0.95, height=0.95)) + 
-    geom_tile() + 
-    ggtitle("") +
-    coord_fixed() +
-    scale_fill_gradientn(colours=brewer.pal(n= 9, name="Reds")) +
-    #scale_fill_viridis(option="heat") +
-    theme(
-		panel.background = element_rect(fill = "white", colour = "grey", linewidth=0),
-		axis.text.x = element_blank(), axis.text.y = element_text(face="plain", color="#222222", size=6, angle=0)
-	) +
-    geom_segment( aes(x = 5, y = 1, xend = 5, yend = nb_diff_TE ), colour = "black", alpha=0, linewidth=0.9 , inherit.aes = FALSE , linetype="twodash") +
-    labs(y="TE", x=xlabel, fill="NUMBER OF TE") +
-	geom_text(aes(label = z), nudge_x=1.2, color = "#222222", size = 2) 
-
-graph
 
 ```
 
