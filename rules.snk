@@ -3756,14 +3756,15 @@ rule DETECTION_TE :
             echo "COUNT TE IN RS..."
             test -s {params.work_directory}/OUTSIDER/TE_DETECTION/COMBINE_TE.csv && \
                 awk 'NR>1 {{ split($2, sp, ":"); if(sp[2] == "<INS>"){{ print sp[5]; }} }}' {params.work_directory}/OUTSIDER/TE_DETECTION/COMBINE_TE.csv \
-                    > {params.work_directory}/OUTSIDER/TE_DETECTION/ID.txt || fail_msg "COMBINE TE FILE ERROR\\n";
+                    > {params.work_directory}/OUTSIDER/TE_DETECTION/ID.txt || : ;
 
-            test -s {params.work_directory}/OUTSIDER/TE_DETECTION/ID.txt && \
-                test -s {output.bln} && \
+            if test -s {params.work_directory}/OUTSIDER/TE_DETECTION/ID.txt && test -s {output.bln}; then
                 grep -w -f {params.work_directory}/OUTSIDER/TE_DETECTION/ID.txt {output.bln} \
                     | awk '{{ split($1, qid, ":"); ins_id=qid[5]"."qid[6]"."qid[7]; print ins_id"\t"$2 }}' | sort | uniq -c | awk 'OFS="\t"{{print $2, $3, $1}}' \
-                    > {params.work_directory}/OUTSIDER/TE_DETECTION/COUNT_TE_IN_RS.txt || \
-                    fail_msg "ERROR COUNT TE IN READ SUPPORT\\n";
+                    > {params.work_directory}/OUTSIDER/TE_DETECTION/COUNT_TE_IN_RS.txt
+            else
+                touch {params.work_directory}/OUTSIDER/TE_DETECTION/COUNT_TE_IN_RS.txt
+            fi;
         else
             : > {output.sniffles_TE_bed}
             : > {output.snif_seqs}
@@ -3949,14 +3950,15 @@ rule TrEMOLO_SV_TE :
         echo "COUNT TE IN RS..."
         test -s {params.work_directory}/OUTSIDER/TrEMOLO_SV_TE/INS/COMBINE_INS_TREMOLO.csv && \
             awk 'NR>1 {{ split($2, sp, ":"); if(sp[2] == "<INS>"){{ print sp[5]; }} }}' {params.work_directory}/OUTSIDER/TrEMOLO_SV_TE/INS/COMBINE_INS_TREMOLO.csv \
-                > {params.work_directory}/OUTSIDER/TrEMOLO_SV_TE/INS/ID.txt || fail_msg "COMBINE TE FILE ERROR\\n";
+                > {params.work_directory}/OUTSIDER/TrEMOLO_SV_TE/INS/ID.txt || : ;
 
-        test -s {params.work_directory}/OUTSIDER/TrEMOLO_SV_TE/INS/ID.txt && \
-            test -s {output.SV_INS_CLUST_bln} && \
+        if test -s {params.work_directory}/OUTSIDER/TrEMOLO_SV_TE/INS/ID.txt && test -s {output.SV_INS_CLUST_bln}; then
             grep -w -f {params.work_directory}/OUTSIDER/TrEMOLO_SV_TE/INS/ID.txt {output.SV_INS_CLUST_bln} \
                 | awk '{{ split($1, qid, ":"); ins_id=qid[5]"."qid[6]"."qid[7]; print ins_id"\t"$2 }}' | sort | uniq -c | awk 'OFS="\t"{{print $2, $3, $1}}' \
-                > {params.work_directory}/OUTSIDER/TrEMOLO_SV_TE/INS/COUNT_TE_IN_RS.txt || \
-                fail_msg "ERROR COUNT TE IN READ SUPPORT\\n";
+                > {params.work_directory}/OUTSIDER/TrEMOLO_SV_TE/INS/COUNT_TE_IN_RS.txt
+        else
+            touch {params.work_directory}/OUTSIDER/TrEMOLO_SV_TE/INS/COUNT_TE_IN_RS.txt
+        fi;
 
         ####CLIPPED
         if [ {params.CLIPPED_READS} = "False" ]; then
